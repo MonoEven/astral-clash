@@ -22,7 +22,7 @@
 </head>
 <body>
 <main id="shell">
-<canvas id="game" width="1280" height="720" aria-label="Astral Clash game canvas"></canvas>
+<canvas id="backdrop" width="1280" height="720" aria-hidden="true"></canvas><canvas id="game" width="1280" height="720" aria-label="Astral Clash game canvas"></canvas>
 <div id="ui"></div>
 <div id="touch-root"></div>
 <div id="rotate-hint" hidden role="status"><div class="rotate-device"></div><strong>&#35831;&#26059;&#36716;&#33267;&#27178;&#23631;</strong><span>ASTRAL CLASH</span></div>
@@ -49,7 +49,7 @@ window.AC={ICONS:{"arrow-left": "<!-- @license lucide-static v0.468.0 - ISC -->\
 'use strict';
 window.AC = window.AC || {};
 Object.assign(AC, {
-  VERSION:'3.0.0', W:1280, H:720,
+  VERSION:'3.1.0', W:1280, H:720,
   HEROES:[
     {id:'lumen',color:'#7df5db',dark:'#15475b',weapon:'blade',speed:340,jump:670,weight:1.00,power:1.00,size:1,passive:'combo'},
     {id:'raven',color:'#b3a0ff',dark:'#353055',weapon:'scythe',speed:355,jump:685,weight:.90,power:.96,size:.98,passive:'air'},
@@ -2132,7 +2132,7 @@ AC.COMBINATIONS=AC.HEROES.length*AC.SIGILS.length*(AC.SIGILS.length-1)*AC.CORES.
 'use strict';
 Object.assign(AC.Game.prototype,{
  render(){
-  const c=this.ctx,A=AC.Art;c.setTransform(this.dpr,0,0,this.dpr,0,0);c.globalAlpha=1;
+  this.renderBackdrop?.();const c=this.ctx,A=AC.Art;c.setTransform(this.dpr,0,0,this.dpr,0,0);c.globalAlpha=1;
   const menu=this.state==='menu';A.background(c,this.realTime,this.camera,this.theme,menu);
   if(menu){
    const hero=AC.HEROES[this.config.hero];
@@ -2413,7 +2413,7 @@ AC.UI={
   const modes=[['battle','swords','ARENA',t('home.battle')],['expedition','map','EXPEDITION',t('expedition')],['survival','waves','SURVIVAL',t('survival')],['training','move','TRAINING',t('training')]];
   this.render(`<div class="screen home-screen"><header class="topbar">${this.brand()}<nav class="nav-actions">${this.tool('help','gamepad-2',this.text.labels)}${this.tool('settings','settings-2',t('settings'))}${this.tool('fullscreen','maximize',t('settings.fullscreen'))}</nav></header>
    <section class="home-main"><div class="home-heading"><h1>${this.text.title}</h1><span>ASTRAL CLASH</span></div><div class="mode-grid">${modes.map(([id,icon,kicker,name],i)=>`<button class="mode-button ${i===0?'primary':''}" data-action="setup" data-mode="${id}"><canvas width="288" height="108" data-mode-art="${i}" aria-hidden="true"></canvas><span class="mode-copy"><small>${kicker}</small><strong>${this.icon(icon)}${name}</strong></span>${this.icon('arrow-up')}</button>`).join('')}</div>
-   <div class="home-extra">${AC.safeLoad('run')?`<button class="secondary" data-action="continue">${this.icon('play')}${t('home.continue')}</button>`:''}<span class="record">${t('bestScore')} <b>${this.escape(AC.safeLoad('survivalBest',0))}</b></span></div></section><footer class="home-footer"><span>08 FIGHTERS / 06 ARENAS</span><span>LOCAL BUILD ${AC.VERSION}</span></footer></div>`,'home');
+   <div class="home-extra">${AC.safeLoad('run')?`<button class="secondary" data-action="continue">${this.icon('play')}${t('home.continue')}</button>`:''}<span class="record">${t('bestScore')} <b>${this.escape(AC.safeLoad('survivalBest',0))}</b></span></div></section></div>`,'home');
   requestAnimationFrame(()=>{for(const el of this.root.querySelectorAll('[data-mode-art]')){const c=el.getContext('2d'),ar=AC.ARENAS[[0,4,3,2][+el.dataset.modeArt]];c.save();c.scale(el.width/1280,el.height/720);AC.Art.background(c,3,null,ar);ar.p.forEach(p=>AC.Art.platform(c,{x:p[0],y:p[1],w:p[2],h:p[3],thin:p[3]<25},ar,0,false));c.restore();}});
  },
  setup(mode){
@@ -2533,7 +2533,7 @@ AC.UI={
   const dialog=this.root.querySelector('.modal');if(e.key==='Tab'&&dialog){const items=[...dialog.querySelectorAll('button:not(:disabled),input,select')].filter(x=>!x.closest('[hidden]'));if(e.shiftKey&&document.activeElement===items[0]){e.preventDefault();items.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===items.at(-1)){e.preventDefault();items[0]?.focus();}}
  },
  update(dt=0){
-  this.syncTouchVisibility();this.uiClock+=dt;if(this.uiClock<.08)return;this.uiClock=0;const g=this.g,p=g.player,i=g.input;
+  this.syncTouchVisibility();this.uiClock+=dt;if(this.uiClock<.08)return;this.uiClock=0;const g=this.g;if(!g)return;const p=g.player,i=g.input;
   if(this.compact&&p&&this.screen==='game'){
    const el=this.root.querySelector('.compact-hud');if(el){const mode=g.mode==='survival'?this.T('wave')+' '+g.wave+'/12 / '+this.T('wave.'+g.waveVariant):g.mode==='expedition'?this.T('fragment')+' '+g.run.keys+'/3':g.mode==='battle'?Math.floor(Math.ceil(Math.max(0,g.remaining))/60)+':'+String(Math.ceil(Math.max(0,g.remaining))%60).padStart(2,'0'):this.T('training');
     const extra=g.mode==='survival'?this.text.score+' '+Math.floor(g.survivalScore)+' / '+Math.max(0,Math.ceil(g.remaining))+'s':g.mode==='expedition'?Math.ceil(p.hp)+' / '+p.maxhp+' HP':this.T('resonance')+' '+Math.floor(p.meter)+'%';
@@ -3018,7 +3018,7 @@ AC.UI={
   if (AC.__v2GameplayInstalled) return;
   AC.__v2GameplayInstalled = true;
 
-AC.VERSION = '3.0.0';
+AC.VERSION = '3.1.0';
   const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const safeNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -3684,8 +3684,6 @@ AC.VERSION = '3.0.0';
       const result = original.apply(this, args);
       const grid = this.root?.querySelector('.mode-grid');
       if (grid && !grid.querySelector('[data-action="v2-challenge"]')) grid.insertAdjacentHTML('beforeend', `<button class="mode-button" data-action="v2-challenge"><span class="mode-copy"><small>${AC.t('v2.daily')}</small><strong>${AC.t('v2.challenge')}</strong></span><span>${AC.t('v2.challengeSub')}</span></button>`);
-      const footer = this.root?.querySelector('.home-footer span');
-      if (footer) footer.textContent = AC.HEROES.length + ' FIGHTERS / ' + AC.ARENAS.length + ' ARENAS';
       return result;
     });
     wrap(AC.UI, 'help', function (original, ...args) {
@@ -4276,7 +4274,7 @@ AC.VERSION = '3.0.0';
 
   UI.update = function () {
     const result = old.update.apply(this, arguments);
-    if (!this._v2.built || !this.g?.player) return result;
+    if (!this._v2 || !this._v2.built || !this.g?.player) return result;
     const controls = this.touchRoot;
     const player = this.g.player;
     const hint = controls.querySelector('[data-action-hints]');
@@ -4358,172 +4356,61 @@ AC.VERSION = '3.0.0';
 ;
 'use strict';
 (() => {
-  const host = typeof window !== 'undefined' ? window : globalThis;
-  const AC = host.AC = host.AC || {};
-  if (AC.__v3StoryInstalled) return;
-  AC.__v3StoryInstalled = true;
-  const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, finite(value, min)));
-  const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
-  const load = (key, fallback) => { try { return AC.safeLoad?.(key, fallback) ?? fallback; } catch (_) { return fallback; } };
-  const save = (key, value) => { try { return AC.safeSave?.(key, value); } catch (_) { return false; } };
-  const wrap = (object, name, handler, marker) => {
-    if (!object || typeof object[name] !== 'function' || object[name][marker]) return;
-    const original = object[name];
-    const patched = function (...args) { return handler.call(this, original, ...args); };
-    Object.defineProperty(patched, marker, {value: true});
-    object[name] = patched;
-  };
-
-  const ZH = {
-    'story': '\u4e3b\u7ebf\u6545\u4e8b',
-    'storySub': '\u516d\u7ae0\u65c5\u7a0b \u00b7 \u4e2a\u4eba\u5b58\u6863 \u00b7 \u661f\u73af\u79d8\u5bc6',
-    'storySetup': '\u4e3b\u7ebf\u8fdc\u5f81',
-    'storyObjective': '\u6cbf\u7740\u661f\u706f\u8def\u7ebf\u524d\u8fdb\uff0c\u53d1\u73b0\u661f\u6838\u771f\u76f8\u3002',
-    'storyContinue': '\u7ee7\u7eed\u7ae0\u8282',
-    'storyNew': '\u65b0\u5efa\u4e3b\u7ebf',
-    'storySave': '\u4e3b\u7ebf\u8fdb\u5ea6',
-    'storyChapter': '\u7ae0\u8282',
-    'storyGuide': '\u661f\u706f\u6307\u5f15',
-    'storyMemory': '\u8bb0\u5fc6\u788e\u7247',
-    'storyCoin': '\u661f\u5c18\u5e01',
-    'storySecret': '\u9690\u85cf\u661f\u6807',
-    'storyShop': '\u661f\u706f\u5546\u5e97',
-    'storyShopSub': '\u7528\u661f\u5c18\u5e01\u89e3\u9501\u6a2a\u5411\u80fd\u529b',
-    'storyShopBuy': '\u8d2d\u4e70',
-    'storyShopOwned': '\u5df2\u62e5\u6709',
-    'storyCurrency': '\u661f\u5c18\u5e01',
-    'storyGrowth': '\u661f\u73af\u6210\u957f',
-    'storyAchievement': '\u6210\u5c31',
-    'storyAchievements': '\u6210\u5c31\u6863\u6848',
-    'storyProfile': '\u73a9\u5bb6\u6863\u6848',
-    'storyNoSave': '\u6682\u65e0\u4e3b\u7ebf\u5b58\u6863',
-    'storyChapter0Title': '\u5e8f\u7ae0\uff1a\u5931\u843d\u7684\u706f\u5854',
-    'storyChapter0Body': '\u661f\u73af\u7684\u706f\u706b\u6b63\u5728\u7184\u706d\u3002\u53bb\u8425\u5730\u548c\u7b2c\u4e00\u679a\u8bb0\u5fc6\u788e\u7247\u8c08\u8c08\u3002',
-    'storyChapter1Title': '\u7b2c\u4e00\u7ae0\uff1a\u6797\u4e2d\u56de\u58f0',
-    'storyChapter1Body': '\u788e\u7247\u8bb0\u5f97\u4e00\u4e2a\u540d\u5b57\u3002\u56de\u58f0\u5728\u6797\u95f4\u6307\u5411\u4e1c\u65b9\u3002',
-    'storyChapter2Title': '\u7b2c\u4e8c\u7ae0\uff1a\u51bb\u7ed3\u7684\u8a93\u8a00',
-    'storyChapter2Body': '\u51b0\u9762\u4e0b\u85cf\u7740\u65e7\u8a93\u8a00\u3002\u53ea\u6709\u5b8c\u6210\u4e00\u6b21\u5b8c\u7f8e\u632f\u5200\uff0c\u5b83\u624d\u4f1a\u56de\u7b54\u3002',
-    'storyChapter3Title': '\u7b2c\u4e09\u7ae0\uff1a\u7089\u5fc3\u8bd5\u70bc',
-    'storyChapter3Body': '\u7089\u5fc3\u4e0d\u662f\u7528\u6765\u6467\u6bc1\u7684\u3002\u5728\u706b\u7130\u91cc\u5b66\u4f1a\u95ea\u8eb2\uff0c\u624d\u80fd\u770b\u89c1\u771f\u6b63\u7684\u65b9\u5411\u3002',
-    'storyChapter4Title': '\u7b2c\u56db\u7ae0\uff1a\u88c2\u9699\u7684\u53e6\u4e00\u4fa7',
-    'storyChapter4Body': '\u88c2\u9699\u91cc\u6ca1\u6709\u8def\uff0c\u53ea\u6709\u4e00\u6b21\u89d2\u529b\u3002\u4e24\u4e2a\u653b\u51fb\u76f8\u9047\u65f6\uff0c\u522b\u540e\u9000\u3002',
-    'storyChapter5Title': '\u7ec8\u7ae0\uff1a\u661f\u6838\u4e4b\u95e8',
-    'storyChapter5Body': '\u4e09\u679a\u8bb0\u5fc6\u788e\u7247\u62fc\u6210\u4e00\u9053\u95e8\u3002\u95e8\u540e\u7684\u5b88\u536b\u4e0d\u518d\u662f\u654c\u4eba\uff0c\u800c\u662f\u4f60\u5931\u53bb\u7684\u4e00\u90e8\u5206\u3002',
-    'storyCompleteTitle': '\u661f\u706f\u91cd\u71c3',
-    'storyCompleteBody': '\u4f60\u8ba9\u661f\u73af\u91cd\u65b0\u8bb0\u4f4f\u4e86\u81ea\u5df1\u3002\u8fd9\u4e0d\u662f\u7ec8\u70b9\uff0c\u53ea\u662f\u4e00\u9053\u66f4\u4eae\u7684\u95e8\u3002',
-    'storyFlashback': '\u8bb0\u5fc6\u5df2\u56de\u5e94',
-    'storySecretFound': '\u53d1\u73b0\u9690\u85cf\u661f\u6807',
-    'storyChapterCleared': '\u7ae0\u8282\u5b8c\u6210',
-    'achievement.firstParry': '\u7b2c\u4e00\u9053\u56de\u58f0',
-    'achievement.firstDodge': '\u65e0\u58f0\u7a7f\u884c',
-    'achievement.firstClash': '\u4e24\u5203\u76f8\u9047',
-    'achievement.firstSecret': '\u661f\u56fe\u5916\u7684\u773c\u775b',
-    'achievement.firstPurchase': '\u706f\u5854\u4f9b\u5949\u8005',
-    'achievement.storyComplete': '\u8bb0\u5fc6\u7684\u5c3d\u5934',
-    'upgrade.echo': '\u56de\u58f0\u82af\u7247',
-    'upgrade.echoDesc': '\u7b26\u5370\u53cd\u5e94\u9891\u7387\u8f7b\u5fae\u63d0\u9ad8',
-    'upgrade.anchor': '\u951a\u70b9\u6807\u8bb0',
-    'upgrade.anchorDesc': '\u8df3\u8dc3\u548c\u56de\u573a\u66f4\u5bb9\u6613\u4fdd\u6301\u65b9\u5411',
-    'upgrade.prism': '\u68f1\u955c\u8bb0\u5fc6',
-    'upgrade.prismDesc': '\u5b8c\u7f8e\u64cd\u4f5c\u989d\u5916\u83b7\u5f97\u5c11\u91cf\u661f\u5c18\u5e01',
-    'upgrade.cost': '\u4ef7\u683c'
-  };
-  Object.assign(AC.ZH = AC.ZH || {}, ZH);
-
-  const ACHIEVEMENTS = ['firstParry','firstDodge','firstClash','firstSecret','firstPurchase','storyComplete'];
-  const UPGRADES = [
-    {id:'echo',cost:32,title:'upgrade.echo',desc:'upgrade.echoDesc'},
-    {id:'anchor',cost:44,title:'upgrade.anchor',desc:'upgrade.anchorDesc'},
-    {id:'prism',cost:58,title:'upgrade.prism',desc:'upgrade.prismDesc'}
+  const host=typeof window!=='undefined'?window:globalThis,AC=host.AC=host.AC||{};
+  if(!AC.Game||AC.__v31StoryInstalled)return;AC.__v31StoryInstalled=true;
+  const n=(v,f=0)=>Number.isFinite(Number(v))?Number(v):f;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,n(v,a)));
+  const save=(key,value)=>{try{return AC.safeSave?.(key,value);}catch(_){return false;}};
+  const load=(key,fallback)=>{try{return AC.safeLoad?.(key,fallback)??fallback;}catch(_){return fallback;}};
+  const wrap=(obj,name,fn,mark)=>{if(!obj||typeof obj[name]!=='function'||obj[name][mark])return;const old=obj[name],next=function(...args){return fn.call(this,old,...args)};Object.defineProperty(next,mark,{value:true});obj[name]=next;};
+  const theme=(id,colors,hazard)=>({id,colors,gravity:1,hazard});
+  const CHAPTERS=[
+    {id:'starport',title:'\u661f\u6e2f\u6b8b\u706f',objective:'\u6cbf\u7740\u6b8b\u706f\u5e73\u53f0\u524d\u5f80\u51fa\u53e3',theme:theme('starport',['#081925','#173e50','#7ee0d0']),width:3000,spawn:[180,450],checkpoint:[180,450],platforms:[[0,560,620,42],[720,520,450,42],[1270,570,520,42],[1660,470,420,42],[2130,540,560,42],[2740,460,260,42],[350,390,220,18],[980,350,230,18],[1530,300,230,18],[2050,360,260,18]],enemies:[[770,450,1,70],[1390,500,2,72],[1780,400,0,80]],objects:[['checkpoint',180,500,'checkpoint-0'],['lore',430,350,'lore-0'],['secret',1080,300,'secret-0'],['exit',2830,410,'exit-0']]},
+    {id:'mosswild',title:'\u82d4\u6797\u56de\u58f0',objective:'\u6fc0\u6d3b\u4e09\u5ea7\u56de\u58f0\u67f1',theme:theme('mosswild',['#0b1d1c','#245448','#a6e3a2']),width:3200,spawn:[170,450],checkpoint:[170,450],platforms:[[0,560,430,42],[500,500,360,42],[930,590,500,42],[1500,500,340,42],[1900,420,420,42],[2390,550,460,42],[2920,460,280,42],[260,380,210,18],[720,300,200,18],[1330,350,260,18],[1800,250,240,18],[2260,310,220,18]],enemies:[[600,440,6,82],[1030,530,7,86],[1590,440,3,92],[2070,360,6,100]],objects:[['checkpoint',170,500,'checkpoint-1'],['memory',770,260,'memory-1'],['console',1350,310,'console-1'],['secret',2280,270,'secret-1'],['exit',3020,410,'exit-1']]},
+    {id:'frostmirror',title:'\u971c\u955c\u89c2\u6d4b\u7ad9',objective:'\u7a7f\u8fc7\u51bb\u7ed3\u5e73\u53f0\u5e76\u627e\u5230\u89c2\u6d4b\u7ad9',theme:theme('frostmirror',['#0c1c31','#2e5770','#b7eaff']),width:3300,spawn:[160,450],checkpoint:[160,450],platforms:[[0,560,520,42],[600,470,380,42],[1040,570,430,42],[1540,450,420,42],[2030,350,350,42],[2450,520,430,42],[2940,410,360,42],[260,370,220,18],[710,290,200,18],[1180,330,230,18],[1690,240,210,18],[2180,180,220,18]],enemies:[[700,410,8,88],[1140,520,2,90],[1630,400,4,96],[2110,300,8,110]],objects:[['checkpoint',160,500,'checkpoint-2'],['memory',720,250,'memory-2'],['secret',1740,200,'secret-2'],['lore',2200,140,'lore-2'],['exit',3140,360,'exit-2']]},
+    {id:'emberforge',title:'\u4f59\u70ec\u94f8\u7089',objective:'\u51fb\u7834\u94f8\u7089\u7684\u9632\u7ebf',theme:theme('emberforge',['#24121b','#65343b','#ffbd7b'],'lava'),width:3000,spawn:[160,450],checkpoint:[160,450],platforms:[[0,570,580,42],[680,500,360,42],[1130,570,450,42],[1680,470,380,42],[2150,560,420,42],[2640,450,360,42],[350,390,220,18],[820,330,210,18],[1410,370,220,18],[1850,280,230,18],[2390,340,200,18]],enemies:[[740,440,2,92],[1210,520,5,110],[1760,420,2,125],[2220,510,6,105]],objects:[['checkpoint',160,510,'checkpoint-3'],['memory',830,290,'memory-3'],['console',1440,330,'console-3'],['secret',2450,300,'secret-3'],['exit',2820,400,'exit-3']]},
+    {id:'riftarchive',title:'\u88c2\u9699\u6863\u6848\u5e93',objective:'\u5728\u88c2\u9699\u5173\u95ed\u524d\u627e\u5230\u6863\u6848',theme:theme('riftarchive',['#170f2b','#462453','#ff83bd'],'rift'),width:3400,spawn:[170,450],checkpoint:[170,450],platforms:[[0,550,360,42],[450,420,300,42],[840,570,380,42],[1320,420,320,42],[1740,300,330,42],[2140,500,370,42],[2600,380,300,42],[3010,540,390,42],[200,340,190,18],[560,260,220,18],[1000,330,220,18],[1430,230,220,18],[1830,180,220,18],[2320,260,220,18]],enemies:[[520,360,9,104],[910,520,1,112],[1390,370,7,118],[1810,250,4,130],[2210,450,9,126]],objects:[['checkpoint',170,490,'checkpoint-4'],['memory',580,220,'memory-4'],['secret',1470,190,'secret-4'],['lore',2350,220,'lore-4'],['exit',3260,490,'exit-4']]},
+    {id:'crown_gate',title:'\u738b\u5ead\u4e4b\u95e8',objective:'\u6253\u5f00\u661f\u6838\u4e4b\u95e8\u5e76\u5b8c\u6210\u51b3\u6218',theme:theme('crown_gate',['#171724','#4b4354','#efd39b']),width:3000,spawn:[150,450],checkpoint:[150,450],platforms:[[0,560,500,42],[590,480,340,42],[1020,560,440,42],[1540,450,380,42],[1990,550,450,42],[2490,430,510,42],[300,370,200,18],[730,280,220,18],[1190,340,220,18],[1710,260,230,18],[2240,350,220,18]],enemies:[[670,420,2,125],[1130,510,5,135],[1640,400,9,145],[2100,500,1,150]],objects:[['checkpoint',150,500,'checkpoint-5'],['memory',740,240,'memory-5'],['secret',1730,220,'secret-5'],['exit',2810,380,'exit-5']]}
   ];
-  const storyDefault = {version:3,chapter:0,flags:{},found:[],coins:0,player:null,updated:0};
-  const profileDefault = {version:1,coins:0,upgrades:{echo:0,anchor:0,prism:0},achievements:[],stories:0};
-  const sanitizeRecord = (value, fallback) => value && typeof value === 'object' && !Array.isArray(value) ? value : {...fallback};
-  AC.V3 = AC.V3 || {};
-  AC.V3.ACHIEVEMENTS = ACHIEVEMENTS.map(id => ({id,title:'achievement.'+id}));
-  AC.V3.UPGRADES = UPGRADES;
-  AC.V3.storyLoad = () => sanitizeRecord(load('story', storyDefault), storyDefault);
-  AC.V3.profileLoad = () => sanitizeRecord(load('profile', profileDefault), profileDefault);
-  AC.V3.profile = AC.V3.profileLoad();
-  AC.V3.profile.upgrades = sanitizeRecord(AC.V3.profile.upgrades, profileDefault.upgrades);
-  AC.V3.profile.achievements = Array.isArray(AC.V3.profile.achievements) ? AC.V3.profile.achievements : [];
-  AC.V3.saveProfile = () => save('profile', AC.V3.profile);
-  AC.V3.unlock = id => {
-    if (!ACHIEVEMENTS.includes(id) || AC.V3.profile.achievements.includes(id)) return false;
-    AC.V3.profile.achievements.push(id);AC.V3.saveProfile();AC.game?.toast?.(AC.t('achievement.'+id),'#e7d59e');return true;
-  };
-  AC.V3.addCoins = amount => { AC.V3.profile.coins = Math.max(0, Math.floor(finite(AC.V3.profile.coins) + finite(amount))); AC.V3.saveProfile(); return AC.V3.profile.coins; };
-  AC.V3.purchase = id => {
-    const item=UPGRADES.find(x=>x.id===id);if(!item||AC.V3.profile.upgrades[id]>=3||AC.V3.profile.coins<item.cost)return false;
-    AC.V3.profile.coins-=item.cost;AC.V3.profile.upgrades[id]++;AC.V3.saveProfile();AC.V3.unlock('firstPurchase');AC.game?.toast?.(AC.t(item.title),'#d6edbf');return true;
-  };
-  AC.V3.storySave = game => {
-    const p=game.player,s=game.v3Story; if(!p||!s)return false;
-    return save('story',{version:3,chapter:s.chapter,flags:{...s.flags},found:[...s.found],coins:s.coins,updated:Date.now(),player:{x:p.x,y:p.y,hp:p.hp,stocks:p.stocks,upgrade:{...p.upgrade},meter:p.meter}});
-  };
-  AC.V3.storyObjects = game => {
-    if (!Array.isArray(game.objects)) return;
-    const exists=new Set(game.objects.filter(o=>o.v3).map(o=>o.id));
-    const add=(object)=>{if(!exists.has(object.id))game.objects.push({...object,v3:true});};
-    [[0,350,'story-node-0'],[1,3350,'story-node-1'],[2,6500,'story-node-2'],[3,9650,'story-node-3'],[4,12700,'story-node-4'],[5,15950,'story-node-5']].forEach(([chapter,x,id])=>add({type:'storyNode',id,x,y:1810,chapter}));
-    [[1550,1780,'memory-0'],[4750,1580,'memory-1'],[7900,1620,'memory-2'],[11100,1740,'memory-3'],[14200,1580,'memory-4']].forEach(([x,y,id])=>add({type:'memory',id,x,y}));
-    [[2320,1760,'secret-0'],[10180,1760,'secret-1'],[15380,1750,'secret-2']].forEach(([x,y,id])=>add({type:'secret',id,x,y}));
-    [[1200,1770,'coin-0'],[5100,1770,'coin-1'],[9000,1770,'coin-2'],[13200,1770,'coin-3']].forEach(([x,y,id])=>add({type:'storyCoin',id,x,y}));
-    add({type:'guide',id:'guide-start',x:520,y:1810,active:true});
-  };
-  const chapterTitle = chapter => AC.t('storyChapter'+clamp(chapter,0,5)+'Title');
-  const chapterBody = chapter => AC.t('storyChapter'+clamp(chapter,0,5)+'Body');
-  AC.Game.prototype.v3Snapshot = function () { const s=this.v3Story;return {mode:this.mode,story:!!s,chapter:s?.chapter??0,flags:Object.keys(s?.flags||{}),found:s?.found?.length||0,coins:s?.coins||0,profileCoins:AC.V3.profile.coins,achievements:AC.V3.profile.achievements.slice(),camera:this.cameraShot?{...this.cameraShot}:null}; };
-  AC.Game.prototype.storyAdvance = function () {
-    const s=this.v3Story;if(!s)return;
-    if(this.state==='cutscene'){s.chapter=Math.max(s.chapter,this.v3CutsceneChapter+1);s.flags['chapter'+this.v3CutsceneChapter]=true;this.v3CurrentNode=null;this.v3InteractTarget=null;this.state='play';this.cameraShot=null;AC.V3.storySave(this);this.audio.storyCue?.('chapter');AC.UI?.showGame?.();return;}
-    if(this.state==='story-finished')return;
-    if(this.v3CurrentNode){const o=this.v3CurrentNode;this.v3CurrentNode=null;if(o.type==='storyNode'&&o.chapter<=s.chapter){this.v3CutsceneChapter=o.chapter;this.state='cutscene';this.cameraShot={x:o.x,y:o.y-220,zoom:1.12,life:4};this.audio.storyCue?.('chapter');AC.UI?.storyCutscene?.(o.chapter,chapterTitle(o.chapter),chapterBody(o.chapter));return;}
-      if(o.type==='memory'){if(!s.found.includes(o.id)){s.found.push(o.id);s.coins+=8;AC.V3.addCoins(8);AC.V3.unlock('firstSecret');this.toast(AC.t('storyFlashback'),'#a9d8e1');}}
-      if(o.type==='secret'){if(!s.found.includes(o.id)){s.found.push(o.id);s.coins+=20;AC.V3.addCoins(20);AC.V3.unlock('firstSecret');this.toast(AC.t('storySecretFound'),'#ead39e');}}
-      if(o.type==='storyCoin'){if(!s.found.includes(o.id)){s.found.push(o.id);s.coins+=5;AC.V3.addCoins(5);this.audio.storyCue?.('coin');}}
-      AC.V3.storySave(this);return;
-    }
-  };
-  AC.Game.prototype.storyStart = function (loadStory=false) {
-    const oldMode=this.mode;this._v3StartingStory=true;this.v3Story=AC.V3.storyLoad();this.v3Story.chapter=clamp(this.v3Story.chapter,0,6);this.v3Story.flags=sanitizeRecord(this.v3Story.flags,{});this.v3Story.found=Array.isArray(this.v3Story.found)?this.v3Story.found:[];this.v3Story.coins=Math.max(0,Math.floor(finite(this.v3Story.coins)));
-    if(this.v3Story.player) this.v3Story.player.x=finite(this.v3Story.player.x,210);
-    this.mode='expedition';this.start('expedition',false);this.mode='story';this.v3StoryActive=true;AC.V3.storyObjects(this);
-    if(loadStory&&this.v3Story.player){const p=this.player,d=this.v3Story.player;p.x=finite(d.x,p.x);p.y=finite(d.y,p.y);p.hp=clamp(d.hp,1,p.maxhp);p.stocks=Math.max(1,Math.floor(finite(d.stocks,3)));p.meter=clamp(d.meter,0,100);p.upgrade={...p.upgrade,...sanitizeRecord(d.upgrade,{})};}
-    const growth=AC.V3.profile.upgrades||{};this.player.upgrade.flow=Math.min(5,this.player.upgrade.flow+Math.floor(finite(growth.echo)));this.player.upgrade.wings=Math.min(5,this.player.upgrade.wings+Math.floor(finite(growth.anchor)));this.player.upgrade.resonant=Math.min(5,this.player.upgrade.resonant+Math.floor(finite(growth.prism)));this.run.story=true;this.run.storyChapter=this.v3Story.chapter;this.run.storyCoins=this.v3Story.coins;this.v3CurrentNode=null;this.state='play';this.mode='story';this._v3StartingStory=false;this.audio.storyCue?.('story');AC.V3.profile.stories++;AC.V3.saveProfile();AC.V3.storySave(this);AC.UI?.showGame?.();
-    void oldMode;
-  };
-  wrap(AC.Game?.prototype,'start',function(original,mode,load=false,...args){if(mode!=='story')return original.call(this,mode,load,...args);this.storyStart(load);return this;},'__v3Start');
-  wrap(AC.Game?.prototype,'update',function(original,dt,...args){if(!this.v3StoryActive)return original.call(this,dt,...args);const oldMode=this.mode;this.mode='expedition';let result;try{result=original.call(this,dt,...args);}finally{this.mode=oldMode;}this.v3UpdateStory(dt);return result;},'__v3Update');
-  wrap(AC.Game?.prototype,'render',function(original,...args){if(!this.v3StoryActive)return original.apply(this,args);const oldMode=this.mode;this.mode='expedition';let result;try{if(this.cameraShot){this.camera.x=clamp(this.cameraShot.x-640/this.cameraShot.zoom,0,this.worldWidth-1280);this.camera.y=clamp(this.cameraShot.y-360/this.cameraShot.zoom,0,1800);this.camera.zoom=this.cameraShot.zoom;}result=original.apply(this,args);}finally{this.mode=oldMode;}return result;},'__v3Render');
-  wrap(AC.Game?.prototype,'menu',function(original,...args){if(this.v3StoryActive)AC.V3.storySave(this);return original.apply(this,args);},'__v3Menu');
-  wrap(AC.Game?.prototype,'interact',function(original,...args){if(this.v3StoryActive&&this.v3InteractTarget){const target=this.v3InteractTarget;this.v3InteractTarget=null;this.v3CurrentNode=target;this.storyAdvance();return;}return original.apply(this,args);},'__v3Interact');
-  AC.Game.prototype.v3UpdateStory=function(dt){
-    const s=this.v3Story,p=this.player;if(!s||!p||!p.alive)return;
-    this.v3StoryTick=(this.v3StoryTick||0)+dt;for(const o of this.objects||[]){if(!o.v3||s.found.includes(o.id))continue;const distance=Math.hypot(p.x-o.x,p.y-(o.y-30));if(['memory','secret','storyCoin'].includes(o.type)&&distance<58){this.v3InteractTarget=o;this.v3CurrentNode=o;this.storyAdvance();break;}if(o.type==='storyNode'&&distance<100&&o.chapter<=s.chapter){this.v3InteractTarget=o;}}
-    if(this.v3InteractTarget&&this.interactTarget===null)this.interactTarget=this.v3InteractTarget;
-    const thresholds=[300,3150,6300,9450,12600,15750];for(let i=0;i<thresholds.length;i++)if(p.x>thresholds[i]&&!s.flags['chapter'+i]&&i<=s.chapter){this.v3CutsceneChapter=i;this.v3CurrentNode={type:'storyNode',id:'story-node-'+i,x:p.x,y:p.y,chapter:i};this.state='cutscene';this.cameraShot={x:p.x,y:p.y-170,zoom:1.14,life:4};AC.UI?.storyCutscene?.(i,chapterTitle(i),chapterBody(i));this.audio.storyCue?.('chapter');break;}
-    if(s.chapter>=6&&!s.flags.complete){s.flags.complete=true;this.state='story-finished';AC.V3.addCoins(100);AC.V3.unlock('storyComplete');this.audio.storyCue?.('victory');AC.V3.storySave(this);AC.UI?.storyComplete?.();}
-    if(this.v3StoryTick>1){this.v3StoryTick=0;AC.V3.storySave(this);}
-  };
-  wrap(AC.Game?.prototype,'finish',function(original,win,...args){if(this.v3StoryActive&&win){this.v3Story.chapter=6;this.v3Story.flags.complete=true;AC.V3.unlock('storyComplete');AC.V3.addCoins(100);AC.V3.storySave(this);}return original.call(this,win,...args);},'__v3Finish');
-  wrap(AC.Game?.prototype,'hit',function(original,owner,target,base,...args){const result=original.call(this,owner,target,base,...args);if(this.v3StoryActive&&owner?.isPlayer&&target&&!target.isPlayer&&target.dead)AC.V3.addCoins(target.elite?6:2);return result;},'__v3Hit');
-  wrap(AC.Game?.prototype,'reset',function(original,...args){const result=original.apply(this,args);if(!this._v3StartingStory){this.v3StoryActive=false;this.v3Story=null;this.v3CurrentNode=null;this.cameraShot=null;}return result;},'__v3Reset');
-  wrap(AC.Game?.prototype,'renderObjects',function(original,context,...args){
-    const out=original.call(this,context,...args);if(!this.v3StoryActive||!this.v3Story)return out;const A=AC.Art,time=this.realTime||0,s=this.v3Story;
-    for(const o of this.objects||[]){if(!o.v3||Math.abs(o.x-this.camera.x-640)>850||Math.abs(o.y-this.camera.y-360)>650)continue;const found=s.found.includes(o.id);
-      if(o.type==='storyNode'&&!s.flags['chapter'+o.chapter]){const col=o.chapter<=s.chapter?'#f1d296':'#6c7885';A.glow(context,o.x,o.y-110,70,col,.18);A.sigil(context,'gravity',o.x,o.y-110,26,col,time*.5);A.text(context,AC.t('storyChapter')+' '+(o.chapter+1),o.x,o.y-150,11,col,'center',700);}
-      if(o.type==='memory'&&!found){const y=o.y+Math.sin(time*2+o.x)*6;A.glow(context,o.x,y,38,'#9bd9ea',.2);A.sigil(context,'pulse',o.x,y,17,'#c3f4ff',time);}
-      if(o.type==='secret'&&!found){A.glow(context,o.x,o.y-35,45,'#e7b3ef',.22);A.sigil(context,'gravity',o.x,o.y-35,17,'#f1c8ff',time);}
-      if(o.type==='storyCoin'&&!found){A.glow(context,o.x,o.y-35,34,'#f4d394',.22);A.circle(context,o.x,o.y-35,9,'#f6dda1');}
-      if(o.type==='guide'&&o.active){A.sigil(context,'gale',o.x,o.y-80,22,'#a7f0d5',time);}
-    }
-    if(this.interactTarget&&this.state==='play'&&this.interactTarget.v3){const o=this.interactTarget;const label=o.type==='memory'?AC.t('storyMemory'):o.type==='secret'?AC.t('storySecret'):o.type==='storyCoin'?AC.t('storyCoin'):AC.t('storyContinue');A.round(context,o.x-100,o.y-185,200,30,7,'#08151be8','#9bd4bf88');A.text(context,'E / '+label,o.x,o.y-165,12,'#e8fff0','center',650);}
-    return out;
-  },'__v3Objects');
-
-  AC.Game.prototype.storyActive=true;
+  const ZH={
+    story:'\u4e3b\u7ebf\u6545\u4e8b',storySub:'\u516d\u7ae0\u4f5c\u8005\u5173\u5361 \u00b7 \u72ec\u7acb\u5b58\u6863',storySetup:'\u4e3b\u7ebf\u65c5\u7a0b',storyContinue:'\u7ee7\u7eed\u4e3b\u7ebf',storyNew:'\u5f00\u59cb\u5e8f\u7ae0',storyChapter:'\u7ae0\u8282',storyObjective:'\u5f53\u524d\u76ee\u6807',storyGuide:'\u6307\u5f15',storyMemory:'\u8bb0\u5fc6\u788e\u7247',storySecret:'\u9690\u85cf\u661f\u6807',storyCoin:'\u661f\u5c18\u5e01',storyCurrency:'\u661f\u5c18\u5e01',storyShop:'\u661f\u706f\u5546\u5e97',storyShopSub:'\u7528\u63a2\u7d22\u83b7\u5f97\u7684\u661f\u5c18\u5e01\u89e3\u9501\u6a2a\u5411\u80fd\u529b',storyShopBuy:'\u8d2d\u4e70',storyShopOwned:'\u5df2\u62e5\u6709',storyAchievements:'\u6210\u5c31\u6863\u6848',storyNoSave:'\u5c1a\u672a\u89e3\u9501',storyCompleteTitle:'\u661f\u73af\u91cd\u65b0\u70b9\u4eae',storyCompleteBody:'\u516d\u7ae0\u7684\u8def\u5f84\u5728\u4f60\u811a\u4e0b\u5408\u6210\u3002\u661f\u73af\u8bb0\u4f4f\u4e86\u4f60\u7684\u6bcf\u4e00\u6b21\u9009\u62e9\u3002',storyDialogueClose:'\u8fd4\u56de\u6e38\u620f',storyCheckpoint:'\u68c0\u67e5\u70b9\u5df2\u8bb0\u5f55',storySecretFound:'\u53d1\u73b0\u9690\u85cf\u661f\u6807',storyMemoryFound:'\u8bb0\u5fc6\u5df2\u6536\u96c6',storyExit:'\u524d\u5f80\u4e0b\u4e00\u7ae0',storyComplete:'\u4e3b\u7ebf\u5b8c\u6210',storyInteract:'\u4e92\u52a8',v3:{}};
+  Object.assign(AC.ZH=AC.ZH||{},ZH);
+  const oldStory=load('story',null),oldProfile=load('profile',null);
+  const defaultStory={version:4,chapter:0,scene:'starport',checkpoint:'checkpoint-0',flags:{},found:[],coins:0,player:null,complete:false};
+  const defaultProfile={version:2,coins:0,upgrades:{echo:0,anchor:0,prism:0},achievements:[],stories:0};
+  const migrateStory=()=>{const raw=load('story',null),s=raw&&typeof raw==='object'?raw:{};return {...defaultStory,chapter:clamp(s.chapter,0,6),scene:s.scene||defaultStory.scene,checkpoint:s.checkpoint||defaultStory.checkpoint,flags:s.flags&&typeof s.flags==='object'?s.flags:{},found:Array.isArray(s.found)?s.found:[],coins:Math.max(0,Math.floor(n(s.coins))),player:s.player&&typeof s.player==='object'?s.player:null,complete:!!s.complete};};
+  const profile={...defaultProfile,...(oldProfile&&typeof oldProfile==='object'?oldProfile:{})};profile.upgrades={...defaultProfile.upgrades,...(profile.upgrades||{})};profile.achievements=Array.isArray(profile.achievements)?profile.achievements:[];AC.V3=AC.V3||{};AC.V3.profile=profile;
+  const saveProfile=()=>save('profile',profile);const unlock=id=>{if(!profile.achievements.includes(id)){profile.achievements.push(id);saveProfile();AC.game?.toast?.(AC.t('achievement.'+id)||id,'#efd39b');}};
+  const achievements=['firstParry','firstDodge','firstClash','firstSecret','firstPurchase','storyComplete'];AC.V3.ACHIEVEMENTS=achievements.map(id=>({id,title:'achievement.'+id}));
+  const upgrades=[{id:'echo',cost:32,title:'upgrade.echo',desc:'upgrade.echoDesc'},{id:'anchor',cost:44,title:'upgrade.anchor',desc:'upgrade.anchorDesc'},{id:'prism',cost:58,title:'upgrade.prism',desc:'upgrade.prismDesc'}];AC.V3.UPGRADES=upgrades;AC.V3.addCoins=amount=>{profile.coins=Math.max(0,Math.floor(n(profile.coins)+n(amount)));saveProfile();return profile.coins;};AC.V3.unlock=unlock;AC.V3.purchase=id=>{const item=upgrades.find(x=>x.id===id),level=n(profile.upgrades[id]);if(!item||level>=3||profile.coins<item.cost*(level+1))return false;profile.coins-=item.cost*(level+1);profile.upgrades[id]=level+1;unlock('firstPurchase');saveProfile();return true;};
+  const storyLoad=()=>migrateStory();const storySave=game=>{const s=game.v31Story,p=game.player;if(!s||!p)return false;return save('story',{version:4,chapter:s.chapter,scene:s.scene,checkpoint:s.checkpoint,flags:{...s.flags},found:[...s.found],coins:s.coins,player:{x:p.x,y:p.y,hp:p.hp,stocks:p.stocks,meter:p.meter,upgrade:{...p.upgrade}},complete:!!s.complete});};
+  AC.V3.storyLoad=storyLoad;AC.V3.storySave=storySave;
+  const chapterFor=game=>CHAPTERS[clamp(game.v31Story?.chapter,0,5)]||CHAPTERS[0];
+  const objectFrom=(item,chapter)=>({type:item[0],x:item[1],y:item[2],id:item[3],chapter,active:true,v31:true});
+  const buildScene=game=>{const c=chapterFor(game);game.theme=c.theme;game.worldWidth=c.width;game.worldHeight=720;game.bounds={left:0,right:c.width,bottom:900,top:-240};game.platforms=c.platforms.map((p,id)=>({x:p[0],y:p[1],w:p[2],h:p[3],thin:p[3]<25,id,baseX:p[0],baseY:p[1]}));game.objects=c.objects.map(item=>objectFrom(item,c===chapterFor(game)?game.v31Story.chapter:0));const growth=profile.upgrades;game.player=new AC.Fighter(game,{player:true,hero:game.config.hero,x:c.spawn[0],y:c.spawn[1],core:game.config.core,sigils:[game.config.primary,game.config.secondary],stocks:3});game.player.upgrade.flow=Math.min(5,game.player.upgrade.flow+n(growth.echo));game.player.upgrade.wings=Math.min(5,game.player.upgrade.wings+n(growth.anchor));game.player.upgrade.resonant=Math.min(5,game.player.upgrade.resonant+n(growth.prism));game.fighters=[game.player];for(const [x,y,hero,hp] of c.enemies){const f=new AC.Fighter(game,{hero,x,y,ai:'bot',team:1,level:game.config.level,face:-1,core:(hero+game.v31Story.chapter)%6,sigils:[hero%8,(hero+3)%8],stocks:1,hp});f.storyHP=hp;f.maxhp=hp;f.active=true;game.fighters.push(f);}game.player.x=c.spawn[0];game.player.y=c.spawn[1];game.player.spawnX=c.spawn[0];game.player.spawnY=c.spawn[1];game.camera={x:0,y:0,zoom:1};game.remaining=999999;game.countdown=0;game.v31Story.scene=c.id;game.v31Story.checkpoint=game.v31Story.checkpoint||'checkpoint-'+game.v31Story.chapter;};
+  AC.Game.prototype.v31Snapshot=function(){const s=this.v31Story;return {version:'3.1',mode:this.mode,chapter:s?.chapter??0,scene:s?.scene||null,objective:chapterFor(this).objective,found:s?.found?.length||0,coins:s?.coins||0,profileCoins:profile.coins,flags:Object.keys(s?.flags||{}),camera:this.camera?{x:this.camera.x,y:this.camera.y,zoom:this.camera.zoom}:null};};
+  AC.Game.prototype.storyStart=function(loadSaved=false){this._v31Starting=true;this.v31Story=storyLoad();if(!loadSaved){this.v31Story={...defaultStory,flags:{},found:[],coins:0,player:null};}this.reset();this.mode='story';this.state='play';this.audio.init();this.audio.mode='story';this.v31StoryActive=true;buildScene(this);if(loadSaved&&this.v31Story.player){const d=this.v31Story.player;this.player.x=n(d.x,this.player.x);this.player.y=n(d.y,this.player.y);this.player.hp=clamp(d.hp,1,this.player.maxhp);this.player.stocks=Math.max(1,Math.floor(n(d.stocks,3)));this.player.meter=clamp(d.meter,0,100);this.player.upgrade={...this.player.upgrade,...(d.upgrade||{})};}this.run={story:true,keys:0,coins:this.v31Story.coins,farthest:this.player.x,visited:new Set([this.v31Story.chapter]),defeated:new Set(),opened:new Set(),checkpoint:{x:this.player.x,y:this.player.y},boons:0};this.v31Story.flags['chapter-start-'+this.v31Story.chapter]=true;this._v31Starting=false;this.audio.storyCue?.('story');AC.V3.profile.stories++;saveProfile();storySave(this);AC.UI?.showGame?.();};
+  AC.Game.prototype.storyInteract=function(){const target=this.v31Target;if(!target)return false;this.v31Target=null;const s=this.v31Story;if(target.type==='checkpoint'){s.checkpoint=target.id;this.player.spawnX=target.x;this.player.spawnY=target.y-55;this.toast(AC.t('storyCheckpoint'),'#bdebcf');storySave(this);return true;}if(['memory','secret','coin'].includes(target.type)){if(!s.found.includes(target.id)){s.found.push(target.id);const reward=target.type==='secret'?20:target.type==='memory'?8:5;s.coins+=reward;AC.V3.addCoins(reward);if(target.type==='secret')unlock('firstSecret');this.audio.storyCue?.(target.type==='memory'?'memory':'coin');this.toast(AC.t(target.type==='secret'?'storySecretFound':target.type==='memory'?'storyMemoryFound':'storyCoin'),'#efd39b');storySave(this);}return true;}if(target.type==='lore'||target.type==='console'||target.type==='npc'){this.v31Dialogue=target;this.cameraShot={x:target.x,y:target.y-100,zoom:1.08,life:.8};this.state='dialogue';AC.UI?.storyDialogue?.(target);return true;}if(target.type==='exit'&&this.v31CanExit){if(this.v31Story.chapter>=CHAPTERS.length-1){s.complete=true;unlock('storyComplete');AC.V3.addCoins(100);storySave(this);this.state='story-complete';AC.UI?.storyComplete?.();this.audio.storyCue?.('victory');}else{s.chapter++;s.scene=CHAPTERS[s.chapter].id;s.checkpoint='checkpoint-'+s.chapter;s.player=null;storySave(this);this.storyStart(true);}return true;}return false;};
+  AC.Game.prototype.storyCloseDialogue=function(){if(this.state!=='dialogue')return;this.state='play';this.cameraShot=null;this.v31Dialogue=null;AC.UI?.showGame?.();};
+  AC.Game.prototype.storyUpdate=function(dt){const s=this.v31Story,p=this.player;if(!s||!p)return;this.v31MobileAuto=!!(AC.UI?.isMobileLayout?.()&&this.settings?.mobileProfile==='simple');this.v31Clock=(this.v31Clock||0)+dt;const enemies=this.fighters.filter(f=>!f.isPlayer&&f.alive);this.v31CanExit=enemies.length===0;this.v31Target=null;let nearest=Infinity;for(const o of this.objects||[]){if(s.found.includes(o.id)&&['memory','secret','coin'].includes(o.type))continue;const d=Math.hypot(p.x-o.x,p.y-(o.y-30));if(d<nearest&&d<78){nearest=d;this.v31Target=o;}}if(this.v31Target&&(this.v31Target.type==='memory'||this.v31Target.type==='secret'||this.v31Target.type==='coin')&&this.v31MobileAuto)this.storyInteract();else if(this.v31Target&&this.input.press('interact'))this.storyInteract();const exit=this.objects.find(o=>o.type==='exit');if(exit&&this.v31CanExit&&Math.hypot(p.x-exit.x,p.y-exit.y)<100)this.v31Target=exit;if(this.v31Target&&this.v31CanExit&&this.v31Target.type==='exit'&&this.v31MobileAuto&&p.x>exit.x-35)this.storyInteract();const c=chapterFor(this);if(p.x>c.width-400&&!this.v31CanExit)this.v31ObjectiveExtra='\u5148\u6e05\u9664\u8fd9\u91cc\u7684\u654c\u4eba';else this.v31ObjectiveExtra='';if(this.v31Clock>1){this.v31Clock=0;storySave(this);}}
+  wrap(AC.Game.prototype,'start',function(old,mode,load=false,...args){if(mode==='story'){this.storyStart(!!load);return this;}return old.call(this,mode,load,...args);},'__v31Start');
+  wrap(AC.Game.prototype,'update',function(old,dt,...args){if(!this.v31StoryActive)return old.call(this,dt,...args);if(this.state!=='play')return;const oldMode=this.mode;this.mode='battle';try{const result=old.call(this,dt,...args);this.storyUpdate(dt);return result;}finally{this.mode=oldMode;}},'__v31Update');
+  wrap(AC.Game.prototype,'render',function(old,...args){if(!this.v31StoryActive)return old.apply(this,args);const oldMode=this.mode,flag=this.v31RenderingStory;this.v31RenderingStory=true;this.mode='expedition';const c=chapterFor(this),p=this.player;const look=p?p.vx*.18:0;const targetX=(p?.x||0)+look-640;this.camera.x=clamp(targetX,0,this.worldWidth-1280);this.camera.y=clamp((p?.y||360)-390,0,180);this.theme=c.theme;try{return old.apply(this,args);}finally{this.mode=oldMode;this.v31RenderingStory=flag;}},'__v31Render');
+  wrap(AC.Game.prototype,'isTeamMode',function(old,...args){return this.v31StoryActive||old.call(this,...args);},'__v31Teams');
+  wrap(AC.Game.prototype,'hit',function(old,owner,target,base,...args){const result=old.call(this,owner,target,base,...args);if(this.v31StoryActive&&target&&!target.isPlayer&&target.alive&&result!==false){target.storyHP=n(target.storyHP,target.maxhp)-Math.max(0,n(base));target.hp=target.storyHP;if(target.storyHP<=0)this.kill(target,owner);}return result;},'__v31Hit');
+  wrap(AC.Game.prototype,'kill',function(old,f,killer,...args){const out=old.call(this,f,killer,...args);if(this.v31StoryActive&&f?.isPlayer&&f.eliminated){f.eliminated=false;f.stocks=1;f.respawn=1.1;f.x=this.player.spawnX;f.y=this.player.spawnY;this.v31Story.deaths=(this.v31Story.deaths||0)+1;storySave(this);}if(this.v31StoryActive&&f&&!f.isPlayer){this.v31Story.kills=(this.v31Story.kills||0)+1;storySave(this);}return out;},'__v31Kill');
+  wrap(AC.Game.prototype,'respawnFighter',function(old,f,...args){const out=old.call(this,f,...args);if(this.v31StoryActive&&f?.isPlayer){f.x=this.player.spawnX||chapterFor(this).spawn[0];f.y=this.player.spawnY||chapterFor(this).spawn[1];f.eliminated=false;f.stocks=1;}return out;},'__v31Respawn');
+  wrap(AC.Game.prototype,'menu',function(old,...args){if(this.v31StoryActive)storySave(this);return old.apply(this,args);},'__v31Menu');
+  wrap(AC.Game.prototype,'renderWorldDecor',function(old,...args){if(this.v31RenderingStory)return;return old.apply(this,args);},'__v31Decor');
+  wrap(AC.Game.prototype,'renderObjects',function(old,ctx,...args){if(!this.v31RenderingStory)return old.call(this,ctx,...args);const A=AC.Art,p=this.player,s=this.v31Story,time=this.realTime||0;for(const o of this.objects||[]){if(Math.abs(o.x-this.camera.x-640)>850)continue;const found=s?.found.includes(o.id);if(o.type==='exit'){const active=this.v31CanExit;A.glow(ctx,o.x,o.y-40,55,active?'#c7f4d1':'#667580',.22);A.sigil(ctx,'gale',o.x,o.y-40,20,active?'#c7f4d1':'#667580',time);}
+    if(o.type==='checkpoint'){A.circle(ctx,o.x,o.y-28,14,'#182c2b','#b7ead2');A.sigil(ctx,'pulse',o.x,o.y-28,9,'#b7ead2',time);}
+    if(o.type==='memory'&&!found){A.glow(ctx,o.x,o.y-35,34,'#b5c8ff',.22);A.sigil(ctx,'pulse',o.x,o.y-35,15,'#dbe1ff',time);}
+    if(o.type==='secret'&&!found){A.glow(ctx,o.x,o.y-35,36,'#efa7d7',.25);A.sigil(ctx,'gravity',o.x,o.y-35,15,'#f3c5e9',time);}
+    if(o.type==='coin'&&!found){A.circle(ctx,o.x,o.y-35,9,'#f2d28f','#fff4c7');}
+    if(['lore','console','npc'].includes(o.type)){A.round(ctx,o.x-15,o.y-49,30,30,5,'#233535','#a8d8c7');A.sigil(ctx,o.type==='console'?'bolt':'aegis',o.x,o.y-34,9,'#d5f0df',time);}
+    if(this.v31Target===o&&this.state==='play'){A.round(ctx,o.x-83,o.y-90,166,26,6,'#07151ce6','#c5e7d599');A.text(ctx,'E / '+AC.t('storyInteract'),o.x,o.y-72,11,'#eafff1','center',650);}
+   }if(p&&this.v31Target&&this.v31Target.type==='exit'&&this.v31CanExit)A.text(ctx,AC.t('storyExit'),this.v31Target.x,this.v31Target.y-78,12,'#f4d49c','center',700);},'__v31Objects');
+  wrap(AC.Game.prototype,'renderHUD',function(old,ctx,...args){if(!this.v31RenderingStory)return old.call(this,ctx,...args);const A=AC.Art,s=this.v31Story,c=chapterFor(this),p=this.player;A.round(ctx,24,20,315,72,10,'#08151de8','#8fbfad66');A.text(ctx,AC.t('storyChapter')+' '+(s.chapter+1)+' / 6',42,45,15,'#f0d39c','left',700);A.text(ctx,AC.t('hero.'+p.hero.id)+'  '+Math.floor(p.pct)+'%  /  '+AC.t('lives')+' '+p.stocks,42,68,11,'#d8e8e1');A.round(ctx,390,20,500,54,9,'#08151ddc','#638f8055');A.text(ctx,AC.t('storyObjective'),410,42,10,'#9dcab9','left',700);A.text(ctx,this.v31ObjectiveExtra||c.objective,410,64,13,'#edfaf0','left',600);A.round(ctx,980,20,275,54,10,'#08151de8','#d1a56d55');A.text(ctx,AC.t('storyCoin')+' '+s.coins+'  /  '+AC.t('storyCurrency')+' '+profile.coins,1000,53,12,'#efd49d','left',650);},'__v31HUD');
 })();
 
 ;
@@ -4618,34 +4505,35 @@ AC.VERSION = '3.0.0';
     return out;
   },'__v3Score');
   AC.V3.musicDesign={themes:themes.map(item=>item.id),layers:['ambient','pulse','tension','climax'],motifBars:motif.length};
-  AC.Audio.prototype.v3Snapshot=function(){const base=typeof oldSnapshot==='function'?oldSnapshot.call(this):{};return {...base,version:'3.0',theme:this.v3Theme||sample(this),storyChapter:this.v3Chapter||0,cues:(this.v3CueHistory||[]).slice()};};
+  AC.Audio.prototype.v3Snapshot=function(){const base=typeof oldSnapshot==='function'?oldSnapshot.call(this):{};return {...base,version:'3.1',theme:this.v3Theme||sample(this),storyChapter:this.v3Chapter||0,cues:(this.v3CueHistory||[]).slice()};};
 })();
 
 ;
 'use strict';
 (() => {
-  const host=typeof window!=='undefined'?window:globalThis,AC=host.AC=host.AC||{},UI=AC.UI;
-  if(!UI||AC.__v3UIInstalled)return;AC.__v3UIInstalled=true;
-  const wrap=(obj,name,fn,mark)=>{if(!obj||typeof obj[name]!=='function'||obj[name][mark])return;const old=obj[name],next=function(...args){return fn.call(this,old,...args)};Object.defineProperty(next,mark,{value:true});obj[name]=next;};
-  const t=k=>AC.t?.(k)||k, icon=n=>UI.icon?.(n)||'', esc=v=>UI.escape?.(v)||String(v??'');
-  const style=()=>{if(document.getElementById('v3-ui-style'))return;const s=document.createElement('style');s.id='v3-ui-style';s.textContent=`
-    .v3-menu-extra{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.v3-menu-extra button{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:9px 14px;border:1px solid #d2b27a99;border-radius:6px;background:#322b25;color:#f5e6c1;font-size:13px}.v3-menu-extra button.secondary{border-color:#7ca898;background:#17302d;color:#e1fff2}.v3-story-card{border-color:#dfbd78!important;background:#392b29e8!important}.v3-story-card canvas{opacity:.34}.v3-setup-story{display:grid;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid #d2b27a66;color:#ead7b4;font-size:12px}.v3-profile-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #62736c66;color:#d9ece3;font-size:12px}.v3-profile-line strong{color:#f0d29c;font-size:18px}.v3-achievement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.v3-achievement{min-height:54px;padding:10px;border:1px solid #627d72;border-radius:5px;background:#182925;color:#cfe6dc;font-size:12px}.v3-achievement.locked{opacity:.42}.v3-achievement strong{display:block;color:#f0d29c;margin-bottom:4px}.story-letterbox{position:fixed;inset:0;pointer-events:none;z-index:-1;border-top:clamp(20px,12vh,100px) solid #05090c;border-bottom:clamp(20px,12vh,100px) solid #05090c}.v3-cutscene .dialog-header{border-bottom:1px solid #9b835866;padding-bottom:10px}.v3-cutscene .story-copy{font-size:16px;line-height:2;color:#ecf4e5;min-height:110px}.v3-cutscene .story-chapter{color:#f0d29c;font-size:11px;letter-spacing:2px}.v3-compact-story{display:flex!important;align-items:center;gap:12px}.v3-compact-story .story-chapter{color:#f1d39b;font-weight:700}.v3-compact-story .story-coins{color:#d9eadf}.v3-story-object{position:absolute;pointer-events:none}
-    @media(max-width:650px) and (orientation:landscape){.v3-achievement-grid{grid-template-columns:1fr}.v3-cutscene .story-copy{font-size:13px;min-height:76px}.v3-menu-extra{margin-top:5px}}
+  const host=typeof window!=='undefined'?window:globalThis;
+  const AC=host.AC=host.AC||{}, UI=AC.UI;
+  if(!UI||AC.__v31UIInstalled)return;
+  AC.__v31UIInstalled=true;
+  const wrap=(obj,name,fn,mark)=>{if(!obj||typeof obj[name]!=='function'||obj[name][mark])return;const old=obj[name];const next=function(...args){return fn.call(this,old,...args)};Object.defineProperty(next,mark,{value:true});obj[name]=next;};
+  const t=k=>AC.t?.(k)||k, icon=k=>UI.icon?.(k)||'', profile=()=>AC.V3?.profile||{coins:0,upgrades:{},achievements:[]};
+  const css=()=>{if(document.getElementById('v31-ui-style'))return;const s=document.createElement('style');s.id='v31-ui-style';s.textContent=`
+    #backdrop{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}#game{z-index:1}#ui{z-index:2}#touch-root{z-index:3}
+    .home-screen .home-footer{display:none}.v31-story-card{border-color:#d7b374!important;background:#352b28e8!important}.v31-story-card canvas{opacity:.3}
+    .v31-profile-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:#d9e7df;font-size:12px}.v31-profile-bar strong{color:#f1d19b;font-size:18px}.v31-menu-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.v31-menu-tools button{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:8px 13px;border:1px solid #768e85;border-radius:5px;background:#182a28;font-size:12px}.v31-menu-tools .shop{border-color:#d7b374;background:#352d26;color:#ffe9be}.v31-story-info{padding:12px 0;border-top:1px solid #caa86c66;margin-top:12px;color:#dfebdf;font-size:12px;line-height:1.7}.v31-objective{position:absolute;left:max(16px,env(safe-area-inset-left));top:max(72px,calc(env(safe-area-inset-top) + 60px));max-width:min(430px,42vw);padding:8px 12px;border-left:2px solid #d8b671;background:#08151bd8;color:#ebf8ed;font-size:12px;pointer-events:none;z-index:2}.v31-objective small{display:block;color:#e9cd95;font-size:10px;margin-bottom:3px}.v31-dialogue .story-copy{min-height:70px;font-size:16px;line-height:1.9;color:#ebf5e8}.v31-dialogue .story-chapter{font-size:11px;color:#efcf94;letter-spacing:1px}.v31-shop-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.v31-shop-grid .boon-card{min-height:190px}.v31-achievements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.v31-achievements>div{min-height:55px;padding:10px;border:1px solid #5f7c6f;border-radius:5px;background:#172723;font-size:12px;color:#d0e4da}.v31-achievements>div.locked{opacity:.4}.v31-achievements strong{display:block;color:#efd19a;margin-bottom:4px}.compact .v31-objective{top:58px;max-width:46vw;font-size:10px;padding:6px 8px}.compact .v31-dialogue .story-copy{font-size:13px;min-height:50px}.compact .v31-shop-grid{grid-template-columns:1fr}.compact .v31-shop-grid .boon-card{min-height:110px}.compact .home-main{padding-top:2px}.compact .home-heading{height:30px;margin-bottom:5px}.compact .home-heading h1{font-size:26px;line-height:1}.compact .mode-button{height:56px;padding:7px}.compact .mode-copy small{font-size:8px;margin-bottom:1px}.compact .mode-copy strong{font-size:13px;gap:4px}.compact .home-extra{display:grid;grid-template-columns:1fr;gap:3px;margin-top:3px;min-height:0}.compact .v31-profile-bar{font-size:10px;gap:7px}.compact .v31-profile-bar strong{font-size:14px}.compact .v31-menu-tools{margin-top:0;gap:4px}.compact .v31-menu-tools button{min-height:30px;padding:4px 7px;font-size:10px}.compact .v31-menu-tools svg{width:14px;height:14px}
   `;document.head.appendChild(s);};
-  const profile=()=>AC.V3?.profile||{coins:0,upgrades:{},achievements:[]};
-  const old={menu:UI.menu,setup:UI.setup,click:UI.click,update:UI.update,init:UI.init};
-  UI.storyCutscene=function(chapter,title,body){style();this.modal(`<div class="story-letterbox"></div><div class="v3-cutscene"><div class="story-chapter">${t('storyChapter')} ${String(chapter+1).padStart(2,'0')} / ASTRAL CLASH</div><h2 id="dialog-title">${title}</h2><p class="story-copy">${body}</p><footer class="modal-footer"><button class="launch" data-action="story-advance">${icon('arrow-up-to-line')}${t('storyContinue')}</button></footer></div>`,true,'story');};
-  UI.storyComplete=function(){this.modal(`<div class="story-chapter">${t('storyChapter')} 06 / COMPLETE</div><h2 id="dialog-title">${t('storyCompleteTitle')}</h2><p class="story-copy">${t('storyCompleteBody')}</p><footer class="modal-footer"><button class="launch" data-action="home">${icon('arrow-left')}${t('home')}</button></footer>`,true,'story-finished');};
-  UI.openShop=function(){
-    const p=profile(),items=AC.V3?.UPGRADES||[];this.modal(`<header class="dialog-header"><h2 id="dialog-title">${t('storyShop')}</h2><span>${t('storyCurrency')} ${p.coins}</span></header><p class="field-note">${t('storyShopSub')}</p><div class="boon-grid v3-shop-grid">${items.map(item=>{const level=p.upgrades[item.id]||0,cost=item.cost*(level+1);return `<button class="boon-card" data-action="v3-buy" data-value="${item.id}" ${level>=3||p.coins<cost?'disabled':''}>${icon('sparkles')}<strong>${t(item.title)}</strong><p>${t(item.desc)}</p><span>${level>=3?t('storyShopOwned'):t('storyShopBuy')+' / '+cost+' '+t('storyCurrency')}</span></button>`;}).join('')}</div><footer class="modal-footer"><button class="secondary" data-action="close-modal">${icon('x')}${t('close')}</button></footer>`,true,'shop');
-  };
-  UI.openAchievements=function(){const p=profile();this.modal(`${this.dialogHeader(t('storyAchievements'))}<div class="v3-profile-line"><span>${t('storyCurrency')}</span><strong>${p.coins}</strong></div><div class="v3-achievement-grid">${(AC.V3?.ACHIEVEMENTS||[]).map(a=>{const done=p.achievements.includes(a.id);return `<div class="v3-achievement ${done?'':'locked'}"><strong>${done?'✓':'·'} ${t(a.title)}</strong><span>${done?t('storyAchievement'):t('storyNoSave')}</span></div>`;}).join('')}</div><footer class="modal-footer"><button class="secondary" data-action="close-modal">${icon('x')}${t('close')}</button></footer>`,true,'achievements');};
-  UI.menu=function(){const out=old.menu.apply(this,arguments);style();const grid=this.root.querySelector('.mode-grid');if(grid&&!grid.querySelector('[data-mode="story"]')){const card=document.createElement('button');card.className='mode-button v3-story-card';card.dataset.action='setup';card.dataset.mode='story';card.innerHTML=`<canvas width="288" height="108" aria-hidden="true"></canvas><span class="mode-copy"><small>STORY / 06 CHAPTERS</small><strong>${icon('book-open')} ${t('story')}</strong></span>${icon('arrow-up')}`;grid.appendChild(card);const c=card.querySelector('canvas').getContext('2d'),ar=AC.ARENAS[6]||AC.ARENAS[0];c.scale(288/1280,108/720);AC.Art.background(c,4,null,ar);ar.p.forEach(p=>AC.Art.platform(c,{x:p[0],y:p[1],w:p[2],h:p[3],thin:p[3]<25},ar,0,false));}
-    const footer=this.root.querySelector('.home-extra');if(footer&&!footer.querySelector('[data-action="v3-shop"]')){const extra=document.createElement('div');extra.className='v3-menu-extra';extra.innerHTML=`<button data-action="v3-shop">${icon('shopping-bag')} ${t('storyShop')}</button><button class="secondary" data-action="v3-achievements">${icon('trophy')} ${t('storyAchievements')}</button>`;footer.appendChild(extra);}return out;};
-  UI.setup=function(){const out=old.setup.apply(this,arguments);if(this.pendingMode==='story'){const panel=this.root.querySelector('.launch-panel');if(panel&&!panel.querySelector('.v3-setup-story')){const s=AC.V3?.storyLoad?.()||{chapter:0};const el=document.createElement('div');el.className='v3-setup-story';el.innerHTML=`<div><b>${t('storyObjective')}</b></div><div>${t('storyChapter')} ${Math.min(6,s.chapter+1)} / 6 · ${t('storySave')}</div><div class="v3-menu-extra"><button class="secondary" data-action="story-continue">${icon('play')} ${s.chapter? t('storyContinue'):t('storyNew')}</button></div>`;panel.appendChild(el);}}return out;};
-  UI.click=function(event){const b=event?.target?.closest?.('[data-action]'),a=b?.dataset?.action;if(a==='v3-shop'){this.openShop();return;}if(a==='v3-achievements'){this.openAchievements();return;}if(a==='v3-buy'){if(AC.V3.purchase(b.dataset.value))this.openShop();return;}if(a==='story-continue'){this.g.storyStart?.(true);return;}if(a==='story-advance'){this.g.storyAdvance?.();return;}if(a==='start'&&this.pendingMode==='story'){this.g.storyStart?.(false);return;}return old.click.apply(this,arguments);};
-  UI.update=function(){const out=old.update.apply(this,arguments),g=this.g;if(g?.v3StoryActive){const hud=this.root.querySelector('.compact-hud');if(hud&&g.v3Story){hud.classList.add('v3-compact-story');hud.innerHTML=`<span class="story-chapter">${t('storyChapter')} ${Math.min(6,g.v3Story.chapter+1)}/6</span><span class="story-coins">${t('storyCoin')} ${g.v3Story.coins} · ${t('storyCurrency')} ${profile().coins}</span>`;}}return out;};
-  UI.init=function(game){const out=old.init.apply(this,arguments);style();return out;};
+  const old={menu:UI.menu,setup:UI.setup,showGame:UI.showGame,click:UI.click,update:UI.update,init:UI.init};
+  AC.Game.prototype.renderBackdrop=function(){const canvas=document.getElementById('backdrop');if(!canvas||!AC.Art)return;const w=host.innerWidth||1280,h=host.innerHeight||720,d=Math.min(host.devicePixelRatio||1,1.5);if(canvas.width!==Math.round(w*d)||canvas.height!==Math.round(h*d)){canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);}const c=canvas.getContext('2d');c.setTransform(d,0,0,d,0,0);c.fillStyle=this.theme?.colors?.[0]||'#071014';c.fillRect(0,0,w,h);const scale=Math.max(w/1280,h/720),ox=(w-1280*scale)/2,oy=(h-720*scale)/2;c.save();c.translate(ox,oy);c.scale(scale,scale);AC.Art.background(c,this.realTime||0,this.camera||null,this.theme||AC.ARENAS[0],this.state==='menu');c.restore();};
+  UI.storyDialogue=function(object){css();const title=object.type==='console'?t('storyGuide'):object.type==='npc'?t('story'):t('storyMemory');this.modal(`<div class="v31-dialogue"><div class="story-chapter">${t('storyChapter')} / ${title}</div><h2 id="dialog-title">${object.type==='console'?t('storyObjective'):t('storyMemory')}</h2><p class="story-copy">${object.type==='console'?t('storyObjective'):object.type==='npc'?t('storySub'):t('storyMemoryFound')}</p><footer class="modal-footer"><button class="launch" data-action="story-dialogue-close">${icon('play')}${t('storyDialogueClose')}</button></footer></div>`,true,'story-dialogue');};
+  UI.storyComplete=function(){this.modal(`<div class="v31-dialogue"><div class="story-chapter">${t('storyChapter')} / COMPLETE</div><h2 id="dialog-title">${t('storyCompleteTitle')}</h2><p class="story-copy">${t('storyCompleteBody')}</p><footer class="modal-footer"><button class="launch" data-action="home">${icon('arrow-left')}${t('home')}</button></footer></div>`,true,'story-complete');};
+  UI.openShop=function(){const p=profile(),items=AC.V3?.UPGRADES||[];this.modal(`<header class="dialog-header"><h2 id="dialog-title">${t('storyShop')}</h2><span>${t('storyCurrency')} ${p.coins}</span></header><p class="field-note">${t('storyShopSub')}</p><div class="boon-grid v31-shop-grid">${items.map(item=>{const level=p.upgrades[item.id]||0,cost=item.cost*(level+1);return `<button class="boon-card" data-action="v31-buy" data-value="${item.id}" ${level>=3||p.coins<cost?'disabled':''}>${icon('sparkles')}<strong>${t(item.title)}</strong><p>${t(item.desc)}</p><span>${level>=3?t('storyShopOwned'):t('storyShopBuy')+' / '+cost+' '+t('storyCurrency')}</span></button>`;}).join('')}</div><footer class="modal-footer"><button class="secondary" data-action="close-modal">${icon('x')}${t('close')}</button></footer>`,true,'shop');};
+  UI.openAchievements=function(){const p=profile();this.modal(`${this.dialogHeader(t('storyAchievements'))}<div class="v31-profile-bar"><span>${t('storyCurrency')}</span><strong>${p.coins}</strong></div><div class="v31-achievements">${(AC.V3?.ACHIEVEMENTS||[]).map(a=>{const done=p.achievements.includes(a.id);return `<div class="${done?'':'locked'}"><strong>${done?'✓':'·'} ${t(a.title)}</strong><span>${done?t('storyAchievement'):t('storyNoSave')}</span></div>`;}).join('')}</div><footer class="modal-footer"><button class="secondary" data-action="close-modal">${icon('x')}${t('close')}</button></footer>`,true,'achievements');};
+  UI.menu=function(){const out=old.menu.apply(this,arguments);css();this.root.querySelector('.home-footer')?.remove();const grid=this.root.querySelector('.mode-grid');if(grid&&!grid.querySelector('[data-mode="story"]')){const card=document.createElement('button');card.className='mode-button v31-story-card';card.dataset.action='setup';card.dataset.mode='story';card.innerHTML=`<canvas width="288" height="108" aria-hidden="true"></canvas><span class="mode-copy"><small>STORY / 06 CHAPTERS</small><strong>${icon('book-open')} ${t('story')}</strong></span>${icon('arrow-up')}`;grid.appendChild(card);const c=card.querySelector('canvas').getContext('2d'),ar=AC.ARENAS[6]||AC.ARENAS[0];c.scale(288/1280,108/720);AC.Art.background(c,4,null,ar);ar.p.forEach(p=>AC.Art.platform(c,{x:p[0],y:p[1],w:p[2],h:p[3],thin:p[3]<25},ar,0,false));}const extra=this.root.querySelector('.home-extra');if(extra&&!extra.querySelector('[data-action="v31-shop"]')){extra.querySelector('.record')?.remove();const bar=document.createElement('div');bar.className='v31-profile-bar';bar.innerHTML=`<span>${t('storyCurrency')}</span><strong>${profile().coins}</strong>`;extra.appendChild(bar);const tools=document.createElement('div');tools.className='v31-menu-tools';tools.innerHTML=`<button class="shop" data-action="v31-shop">${icon('shopping-bag')}${t('storyShop')}</button><button data-action="v31-achievements">${icon('trophy')}${t('storyAchievements')}</button>`;extra.appendChild(tools);}return out;};
+  UI.setup=function(){const out=old.setup.apply(this,arguments);if(this.pendingMode==='story'){const panel=this.root.querySelector('.launch-panel');if(panel&&!panel.querySelector('.v31-story-info')){const s=AC.V3.storyLoad?.()||{chapter:0};const info=document.createElement('div');info.className='v31-story-info';info.innerHTML=`<b>${t('storyObjective')}</b><br>${t('storyChapter')} ${Math.min(6,(s.chapter||0)+1)} / 6<br><span>${t('storySave')}</span><div class="v31-menu-tools"><button class="secondary" data-action="story-continue">${icon('play')}${s.chapter?t('storyContinue'):t('storyNew')}</button></div>`;panel.appendChild(info);}}return out;};
+  UI.showGame=function(){const out=old.showGame.apply(this,arguments);if(this.g.mode==='story'&&!this.root.querySelector('.v31-objective')){const o=document.createElement('div');o.className='v31-objective';o.innerHTML=`<small>${t('storyObjective')}</small><span data-story-objective></span>`;this.root.appendChild(o);}return out;};
+  UI.update=function(){const out=old.update.apply(this,arguments),g=this.g;if(g?.v31Story){const el=this.root.querySelector('[data-story-objective]');if(el){const c=g.v31Story.chapter;el.textContent=g.v31ObjectiveExtra||AC.t('storyObjective')+' / '+(c+1);}}return out;};
+  UI.click=function(event){const b=event?.target?.closest?.('[data-action]'),a=b?.dataset?.action;if(a==='v31-shop'){this.openShop();return;}if(a==='v31-achievements'){this.openAchievements();return;}if(a==='v31-buy'){if(AC.V3.purchase(b.dataset.value))this.openShop();return;}if(a==='story-dialogue-close'){this.g.storyCloseDialogue?.();return;}if(a==='story-continue'||a==='story-new'){this.g.storyStart?.(a==='story-continue');return;}if(a==='start'&&this.pendingMode==='story'){this.g.storyStart?.(false);return;}return old.click.apply(this,arguments);};
+  UI.init=function(game){const out=old.init.apply(this,arguments);css();return out;};
 })();
 
 ;
